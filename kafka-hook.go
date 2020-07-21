@@ -63,19 +63,19 @@ func (hook *KafkaHook) Levels() []logrus.Level {
 
 func (hook *KafkaHook) Fire(entry *logrus.Entry) error {
 	// Check time for partition key
-	partitionKey := 0
+	var partitionKey sarama.ByteEncoder
 
 	// Get field time
-	// t, _ := entry.Data["time"].(time.Time)
+	t, _ := entry.Data["time"].(time.Time)
 
 	// Convert it to bytes
-	//b, err := t.MarshalBinary()
+	b, err := t.MarshalBinary()
 
-	//if err != nil {
-		//return err
-	//}
+	if err != nil {
+		return err
+	}
 
-	//partitionKey = sarama.ByteEncoder(b)
+	partitionKey = sarama.ByteEncoder(b)
 
 	// Check topics
 	var topics []string
@@ -89,7 +89,7 @@ func (hook *KafkaHook) Fire(entry *logrus.Entry) error {
 	}
 
 	// Format before writing
-	b, err := hook.formatter.Format(entry)
+	b, err = hook.formatter.Format(entry)
 
 	if err != nil {
 		return err
@@ -102,6 +102,7 @@ func (hook *KafkaHook) Fire(entry *logrus.Entry) error {
 			Key:   partitionKey,
 			Topic: topic,
 			Value: value,
+			Partition: 0,
 		}
 	}
 
